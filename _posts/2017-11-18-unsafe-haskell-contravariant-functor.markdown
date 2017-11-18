@@ -18,7 +18,7 @@ Recently I re-read some articles about Contravariant Functor. For people who try
 StackOverflow<sup>[2](#fn-stackoverflow-ref-1)</sup> and searching results give detailed references with
 actual examples in code. However, I have the same feeling to them when I was reading articles about Functors: there should be some diagrams and extra
 explanation for the type and value transformation, so that when a programmer is tracing type signatures and examples, the relations by steps may be
-depicted more clearly, at least more clearly to me<sup>[3](#fn-sidenote)</sup> . Therefore, I made some diagrams and write text for them. As I said, these are **"unsafe"** memo,
+depicted more clearly, at least more clearly to me<sup>[4](#fn-sidenote)</sup> . Therefore, I made some diagrams and write text for them. As I said, these are **"unsafe"** memo,
 I may misunderstand some concepts of Haskell, or some extra information are actually redundant, so there is no guarantee for the gain after reading.
 
 ## Functors by usage
@@ -29,7 +29,8 @@ Functors divided by different **"roles"** for different usages:
 
 **In brief**:
 
-1. Functor definition is to have a type variable `a` and a `fmap` to apply a customised function to the value of `a`
+1. Functor definition is to have a type variable `a` and a `fmap` to apply a customised function to the value of `a`.
+There is a diagram in [Appendix](#appendix) for `fmap` if it looks an unfamiliar concept. 
 2. Some Functors are designed as a "container", like `[]` and `Maybe`. The `fmap` will apply the function to the value inside the container Functor
 3. For Functors like `IO`, it is more like for applying transformation inside one specific context for isolation and specific purpose,
 since there is no "container" anymore
@@ -40,48 +41,46 @@ but the whole `fmap` is designed to have interaction with the embedded one
 
 The typeclass of Functor tagged as 1. in the diagram is:
 
-    {% highlight haskell %}
+```haskell 
+class Functor f where
+  fmap :: (a->b) -> f a -> f b
+```
 
-    class Functor f where
-      fmap :: (a->b) -> f a -> f b
-    {% endhighlight %}
-
-The point is, `f` could be any data type, like `Maybe`, `[]`, `IO`, or even `(,)`<sup>[2](#fn-functor-datatype)</sup> and `(->)`.
+The point is, `f` could be any data type, like `Maybe`, `[]`, `IO`, or even `(,)`<sup>[3](#fn-functor-datatype)</sup> and `(->)`.
 And since Functor is a typeclass, type variable in instance is available:
 
-    {% highlight haskell %}
 
-    instance Functor ([]) where
-      fmap = ...
+```haskell 
+instance Functor ([]) where
+  fmap = ...
 
-    instance Functor ((->) a) where
-      fmap = ...
-    {% endhighlight %}
+instance Functor ((->) a) where
+  fmap = ...
+```
 
 The later one, when using it, is actually **embedding** a variable of type `a` inside the Functor.
 This makes it **different** from the "simple" Functors like `Maybe` or `IO`. Since in those Functors,
 especially when using them in code, all variables are transparent to the function applied in `fmap`:
 
-    {% highlight haskell %}
 
-    fmap isOdd [3,4,5]    -- isOdd will get its input from ([] a) while `a` is Int
-    fmap isOdd (Just 5)   -- isOdd will get its input from (Maybe a) while `a` is Int
-    fmap isOdd readInt    -- isOdd will get its input from (IO a) while `a` is Int
-    {% endhighlight %}
+```haskell 
+fmap isOdd [3,4,5]    -- isOdd will get its input from ([] a) while `a` is Int
+fmap isOdd (Just 5)   -- isOdd will get its input from (Maybe a) while `a` is Int
+fmap isOdd readInt    -- isOdd will get its input from (IO a) while `a` is Int
+```
 
 In this example, `isOdd` can handle the variable now go with Functor well, since these Functor will give the only one
 variable to it, namely, the `Int` variable. Programmer can trace the code according the definition of `fmap` easily:
 
-    {% highlight haskell %}
+```haskell 
+class Functor f where
+  fmap :: (a->b) -> f a -> f b
 
-    class Functor f where
-      fmap :: (a->b) -> f a -> f b
-
-    fmap isOdd readInt
-    --
-    -- since `f a` is `readInt:: IO Int`, thus `f` is `IO` and  `a` is `Int`,
-    -- the `isOdd` to apply will get the `a` from `readInt`.
-    {% endhighlight %}
+fmap isOdd readInt
+--
+-- since `f a` is `readInt:: IO Int`, thus `f` is `IO` and  `a` is `Int`,
+-- the `isOdd` to apply will get the `a` from `readInt`.
+```
 
 For the **"container"** Functors as 2. in the diagram, it is easy to image that the Functor is a container
 and the `fmap` is to treat the contained variable to the applying function. Even for those **"context"** Functors like `IO` tagged as 3.,
@@ -94,17 +93,16 @@ is not too difficult to image. Since where the input comes from and what's the o
 
 However, in the case like Functor `(->) a)` as 4., there are some other things in the instantiating code:
 
-    {% highlight haskell %}
+```haskell 
+class Functor f where
+  fmap :: (a->b) -> f a -> f b
 
-    class Functor f where
-      fmap :: (a->b) -> f a -> f b
-
-    fmap isOdd round
-    --
-    -- what will be the "input" of `isOdd` from `round`,
-    -- without reading the implementation of fmap ??? 
-    --
-    {% endhighlight %}
+fmap isOdd round
+--
+-- what will be the "input" of `isOdd` from `round`,
+-- without reading the implementation of fmap ??? 
+--
+```
 
 Apparently it is necessary to have a new way to image how the things work here, and this is strongly coupled with the usage
 of the Functor, namely it's "role" for programmer. Since without knowing the usage of the Functor, and how it get implemented and used in code,
@@ -114,7 +112,7 @@ even tracing the whole type definitions won't give programmers more insight of t
 
 ---
 
-## Appendix: fmap in non-embedding Functor 
+## <a name="appendix"></a>Appendix: fmap in non-embedding Functor 
 
 <img src="https://docs.google.com/drawings/d/e/2PACX-1vTrqsXUzPVtXA19S2HthlOXu-vSr-8nlCnDNcslBhz0plSUvSbExYcI4VQJdsfJj1wig4_akjGhW_w1/pub?w=960&amp;h=720">
 
@@ -133,32 +131,33 @@ even without the help from Monad
 
 <a name="fn-stackoverflow-ref-1">2</a>: [https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor]()
 
-<a name="fn-sidenote">3</a>:
+<a name="fn-functor-datatype">3</a>: [https://hackage.haskell.org/package/base-4.8.1.0/docs/src/GHC.Base.html#line-625]()
+
+<a name="fn-sidenote">4</a>:
 **(Side note about diagrams and "unsafe" explanations)**
 
 People usually admire the high abstraction among typeclasses like Functor or Monad, it is like:
 
-    {% highlight haskell %}
+```haskell 
+[] a
+Maybe a
+IO a
 
-    [] a
-    Maybe a
-    IO a
+-- they have the same pattern:
 
-    -- they have the same pattern:
+m a
 
-    m a
+-- so we can have the same abstract operators among all:
 
-    -- so we can have the same abstract operators among all:
+fmap :: (Functor f) => (a -> b) -> f a -> f b
+>>= :: (Monad m) => m a -> (a -> b) -> m b
 
-    fmap :: (Functor f) => (a -> b) -> f a -> f b
-    >>= :: (Monad m) => m a -> (a -> b) -> m b
+-- while using the operator, like `fmap`:
 
-    -- while using the operator, like `fmap`:
-   
-    fmap isOdd [3,4,5,6] -- [True, False, True, False]
-    fmap isOdd (Just 3)  -- Just True
-    fmap isOdd readInt   -- IO (depends on the user input)
-    {% endhighlight %}
+fmap isOdd [3,4,5,6] -- [True, False, True, False]
+fmap isOdd (Just 3)  -- Just True
+fmap isOdd readInt   -- IO (depends on the user input)
+```
 
 Usually the following description will be like:
 
@@ -169,36 +168,34 @@ their usages are actually very different. And such difference are in fact import
 
 For example, tutorials about Functors not in the simple shape above, usually will jump to the following Functors directly:
 
-    {% highlight haskell %}
-
-    State s a
-    (->) a b
-    {% endhighlight %}
+```haskell 
+State s a
+(->) a b
+```
 
 And after explanations similar to the simple ones like `Maybe a`, the example actually will be much more complicated than their simpler cousins:
 
-    {% highlight haskell %}
+```haskell 
+-- 
+-- explain that `random` will generate new random generator,
+-- with some content about why to change random generator is necessary,
+-- and of course how `State s` is supposed to work with that
+--
+let useRand = State random
+fmap useRand (State RandGen) -- State RandGen' (random Int like 123)
+```
 
-    -- 
-    -- explain that `random` will generate new random generator,
-    -- with some content about why to change random generator is necessary,
-    -- and of course how `State s` is supposed to work with that
-    --
-    let useRand = State random
-    fmap useRand (State RandGen) -- State RandGen' (random Int like 123)
-    {% endhighlight %}
+Or for `(->) a b`:
 
-Or for `(->) a b`
 
-    {% highlight haskell %}
-
-    --
-    -- try to explain that the scary `->` in type signature is actually a functor,
-    -- if it combine with the "input" `a`, and add more concepts that fmap for `(->) a` is
-    -- actually function composition `(.)`
-    --
-    fmap isOdd round = isOdd . round
-    {% endhighlight %}
+```haskell 
+--
+-- try to explain that the scary `->` in type signature is actually a functor,
+-- if it combine with the "input" `a`, and add more concepts that fmap for `(->) a` is
+-- actually function composition `(.)`
+--
+fmap isOdd round = isOdd . round
+```
 
 I have found that to focus on these common parts of the abstraction and type signatures,
 although they are the essential and very powerful concept in Haskell language,

@@ -1,0 +1,21 @@
+---
+---
+
+@import "{{ site.theme }}";
+@import "zenburn.css";
+
+.highlight .kt {
+  color: #a8baf3;
+}
+
+td.rouge-code pre {
+  border: 0px;
+}
+
+pre.lineno {
+  border: 0px;
+}
+
+.highlighter-rouge .highlight {
+  background: #3f3f3f; 
+}
