@@ -6,7 +6,7 @@ categories: murmur
 ---
 
 Since I like to add tons of footnotes<sup>[1](#footnote)</sup>, `code highlight` and other weird stuff that maybe too old to new media,
-to put a site for notes seems like a footgun gentle than others.
+to put a site for notes seems like a footgun more gentle than others.
 
 Oh, the first hurting wound hit by it is, ironically, the footer. The duplicated titles of the site looks stupid, but I don't want to waste one hour for picking a theme; the power of default option, I think.
 
