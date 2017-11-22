@@ -19,3 +19,18 @@ pre.lineno {
 .highlighter-rouge .highlight {
   background: #3f3f3f; 
 }
+
+.post-content, .post-title, .post-meta, .post-link {
+  /*font-family: "Roboto Slab";*/
+}
+
+code {
+  white-space:pre;
+  word-break:break-all;
+  word-wrap:break-word;
+}
+
+.post-content p, li {
+  font-size: 15pt;
+  line-height: 2rem; 
+}

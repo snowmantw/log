@@ -5,200 +5,63 @@ date: 2017-11-18 11:47:00 +0900
 categories: Haskell unsafeMemo
 ---
 
-## "Embedding" Functor: (->) r
+Different from Functor has only one type variable, an "embedding" Functor has two or more. Like the `s` in `State s a` means to manipulate a state during computation, or `r` in `(->) r a` for generating
+functions that have the same input.
 
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vSL5gFJq4Flm11a2ejcnSOOUxNJ3Rsa0XavkhD4xnMuQX8FbCePl7TT33Pei9wksqSM7yHSukE3wTlX/pub?w=960&amp;h=720">
+## Functor (State s)
 
-**In brief**:
-
-1. Different from Functor has only one type variable, an "embedding" function has two or more. For usual cases in turtorial, `(->) r` is a very common example. Similar to `Maybe a` or `IO a`,
-the Functor has an "argument" `a` that can be transformed when `fmap` it, but there is an implicit parameter `r` not direcrtly accessible via the function to apply by `fmap`
-
-2. Assume that we treat `(->) Event a` as a Functor, just like `Maybe a`, but this time we can embed a fixed type variable `Event` in the Functor as one parameter. And how this parameter changes
-during the computation is defined by the `fmap` of the Functor. Functor user apply an `(a->b)` cannot know and effect the parameter directly.
-
-3. Although `(->)` looks like a special symbol that used so common in type signature, it is still an ordinary symbol that we can image to use in define a Functor<sup>[1](#fn-type-operator-built-in-syntax)</sup>, just like `Maybe` or `[]`.
-The tricky part is we can "curry" a fixed type parameter when define and instantiate the Functor, like in this example the `r` in type class definition is instantiated to `Event`. So in the following example, to image it as `(-> Event) a`
-should be easier to not get confused by the plain `(->) Event a`, or `(->) r a` that looks like there are two variables will be transformed for the user.
-
-4. Since how to interact with the embedded parameter `Event` in this example is defined by the `fmap`, what the user can control is how to transform the argument of `(-> Event)` Functor. For example, if there is a Functor in type of
-`(-> Event) Bool`, via applying a `(Bool->String)`, we should get a `(-> Event) String`, just like from `Maybe Bool` to `Maybe String` via applying the same function. 
-
-5. For the pratical usage, we can get a "function generator" that user only needs to provide a "converter" for the output, and the input will always fixed to `Event`, while these generated functions may be used in a specific usage like as
-event stream handlers, and user don't need to take care about how to make the stream, or how to get the event. What user needs to do is to convert the possible output of the handler to a desired type.
-
-### Explanation
-
-The first thing is why we need embedding Functors like `(->) r`, and when we use them in pratical code.
-
-3. Maybe the most confused part of this Functor is `(->)`: at the beginning of learning Haskell, although it is mentioned that infixed operators are just ordinary prefix operator with syntax sugar,
-the symbol infix `(->)` is so basic and common in type signature, to put it just as a name of Functor like `Maybe` or `[]` is difficult to image, not to mention 
-
-The typeclass of Functor tagged as 1. in the diagram is:
-
-```haskell 
-class Functor f where
-  fmap :: (a->b) -> f a -> f b
-```
-
-The point is, `f` could be any data type, like `Maybe`, `[]`, `IO`, or even `(,)`<sup>[3](#fn-functor-datatype)</sup> and `(->)`.
-And since Functor is a typeclass, type variable in instance is available:
-
-
-```haskell 
-instance Functor ([]) where
-  fmap = ...
-
-instance Functor ((->) a) where
-  fmap = ...
-```
-
-The later one, when using it, is actually **embedding** a variable of type `a` inside the Functor.
-This makes it **different** from the "simple" Functors like `Maybe` or `IO`. Since in those Functors,
-especially when using them in code, all variables are transparent to the function applied in `fmap`:
-
-
-```haskell 
-fmap isOdd [3,4,5]    -- isOdd will get its input from ([] a) while `a` is Int
-fmap isOdd (Just 5)   -- isOdd will get its input from (Maybe a) while `a` is Int
-fmap isOdd readInt    -- isOdd will get its input from (IO a) while `a` is Int
-```
-
-In this example, `isOdd` can handle the variable now go with Functor well, since these Functor will give the only one
-variable to it, namely, the `Int` variable. Programmer can trace the code according the definition of `fmap` easily:
-
-```haskell 
-class Functor f where
-  fmap :: (a->b) -> f a -> f b
-
-fmap isOdd readInt
---
--- since `f a` is `readInt:: IO Int`, thus `f` is `IO` and  `a` is `Int`,
--- the `isOdd` to apply will get the `a` from `readInt`.
-```
-
-For the **"container"** Functors as 2. in the diagram, it is easy to image that the Functor is a container
-and the `fmap` is to treat the contained variable to the applying function. Even for those **"context"** Functors like `IO` tagged as 3.,
-a similar explanation:
-
-> "Functor IO is to do variable transformation with the function in a specific context,
-> so that the transformation can be isolated from other pure computation not in the context"
-
-is not too difficult to image. Since where the input comes from and what's the output of the whole `fmap` is obvious.
-
-However, in the case like Functor `(->) a)` as 4., there are some other things in the instantiating code:
-
-```haskell 
-class Functor f where
-  fmap :: (a->b) -> f a -> f b
-
-fmap isOdd round
---
--- what will be the "input" of `isOdd` from `round`,
--- without reading the implementation of fmap ??? 
---
-```
-
-Apparently it is necessary to have a new way to image how the things work here, and this is strongly coupled with the usage
-of the Functor, namely it's "role" for programmer. Since without knowing the usage of the Functor, and how it get implemented and used in code,
-even tracing the whole type definitions won't give programmers more insight of the context. This will be covered in the next unsafeMemo.
-
-**Next: Embedding Functors**
-
----
-
-## <a name="appendix"></a>Appendix: fmap in non-embedding Functor 
-
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vTrqsXUzPVtXA19S2HthlOXu-vSr-8nlCnDNcslBhz0plSUvSbExYcI4VQJdsfJj1wig4_akjGhW_w1/pub?w=960&amp;h=720">
+<img style="border: 2px solid #bbb" src="https://docs.google.com/drawings/d/e/2PACX-1vSsiSa4A9yOu0XpnORj6zMtpuxRyZGQeAG9jnxsD3-qikKutT62Uvr_hpH1Yx0neU0_tuH8MvJH-pM-/pub?w=960&amp;h=720">
 
 **In brief**:
 
-1. I would like to call the function with signature `(a->b)` in `fmap` a **"transformer"**, since its job
-is to transform the input from Functor by `fmap`.
-2. Color means the value is different, while sometime the type in text keep the same 
-3. Although there is no "statement" in Haskell language, this sequence of transformation can be done in different way,
-even without the help from Monad
+1. For this definition it is easy to image that it provide user to interact with the state and the output in previous step. One thing to note is that although it seems the same with the `(->) r` Functor,
+the real definition is actually `newtype State s a = State { runState :: s -> (s, a) }`. That means, the actual instance will be: `State (s -> (a, s))`. Compare to `Maybe a` or `(-> r) a`,
+this is not easy to get the idea at the first look. The key is, user provides a state transformer to generate another state `s` and transformed result `a`.
+
+2. A common example for tutorials is `State RandGen Int` that to generate a new `Int` from a random number generator. For each time it generates a random number, the generator need to be updated to prevent generating the same
+number. Therefore, here we put the `RandGen` as the implicit `s` in State Functor after every transformation step.
+
 
 ---
 <br />
 
-<a name="fn-unsafe">1</a>: no guarantee for safety, correctness and not outdated
+## Functor (-> r)
 
-<a name="fn-stackoverflow-ref-1">2</a>: [https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor]()
+<img style="border: 2px solid #bbb" src="https://docs.google.com/drawings/d/e/2PACX-1vSL5gFJq4Flm11a2ejcnSOOUxNJ3Rsa0XavkhD4xnMuQX8FbCePl7TT33Pei9wksqSM7yHSukE3wTlX/pub?w=960&amp;h=720">
 
-<a name="fn-functor-datatype">3</a>: [https://hackage.haskell.org/package/base-4.8.1.0/docs/src/GHC.Base.html#line-625]()
+**In brief**:
 
-<a name="fn-sidenote">4</a>:
-**(Side note about diagrams and "unsafe" explanations)**
+1. As a common case in some tutorials, `(->) r a` is similar to `Maybe a` or `IO a`,
+the Functor has an "argument" `a` that can be transformed when `fmap` it, but the difference is that it has **an implicit parameter `r`** not directly accessible via the function to apply by `fmap`
 
-People usually admire the high abstraction among typeclasses like Functor or Monad, it is like:
+2. We can have `(->) Event a` instance just like to have a `Maybe a`, but this time we can embed a fixed type variable `Event` in the Functor as one parameter. And how this parameter changes
+during the computation is defined by the `fmap` of the Functor. Functor user apply an `(a->b)` cannot know and effect the parameter directly.
 
-```haskell 
-[] a
-Maybe a
-IO a
+3. Although `(->)` looks like a special symbol that used so common in type signature, it is still an ordinary symbol that we can image to use in define a Functor<sup>[1](#fn-type-operator-built-in-syntax)</sup>, just like `Maybe` or `[]`.
+The tricky part is we can "curry" a fixed type parameter when define and instantiate the Functor, like in this example the `r` in type class definition is instantiated to `Event`. Imaging it is `(-> r) a`
+could prevent getting confused like the original `(->) r a` form that looks like there are two variables will be transformed for the user.
 
--- they have the same pattern:
+4. Since how to interact with the embedded parameter `Event` in this example is defined by the `fmap`, what the user can control is how to transform the argument of `(-> Event)` Functor. For example, if there is a Functor in type of
+`(-> Event) Bool`, via applying a `(Bool->String)`, we should get a `(-> Event) String`, just like from `Maybe Bool` to `Maybe String` via applying the same function. 
 
-m a
-
--- so we can have the same abstract operators among all:
-
-fmap :: (Functor f) => (a -> b) -> f a -> f b
->>= :: (Monad m) => m a -> (a -> b) -> m b
-
--- while using the operator, like `fmap`:
-
-fmap isOdd [3,4,5,6] -- [True, False, True, False]
-fmap isOdd (Just 3)  -- Just True
-fmap isOdd readInt   -- IO (depends on the user input)
-```
-
-Usually the following description will be like:
-
-> "Look! We can abstract List, IO and other structures as in the same abstraction, wonderful!"
-
-However, the problem is when a programmer tries to study and use those abstract structures,
-their usages are actually very different. And such difference are in fact important to who tries to understand the idea by reading type signatures.
-
-For example, tutorials about Functors not in the simple shape above, usually will jump to the following Functors directly:
-
-```haskell 
-State s a
-(->) a b
-```
-
-And after explanations similar to the simple ones like `Maybe a`, the example actually will be much more complicated than their simpler cousins:
-
-```haskell 
--- 
--- explain that `random` will generate new random generator,
--- with some content about why to change random generator is necessary,
--- and of course how `State s` is supposed to work with that
---
-let useRand = State random
-fmap useRand (State RandGen) -- State RandGen' (random Int like 123)
-```
-
-Or for `(->) a b`:
+5. For the practical usage, we can get a "function generator" that user only needs to provide a "transformer" for the output, and the input will always fixed to `Event`. These generated functions may be used in a specific usage like as
+event stream handlers, and user don't need to take care about how to make the stream, or how to get the event. What user needs to do is to transform the possible output of the handler to a desired type.
 
 
-```haskell 
---
--- try to explain that the scary `->` in type signature is actually a functor,
--- if it combine with the "input" `a`, and add more concepts that fmap for `(->) a` is
--- actually function composition `(.)`
---
-fmap isOdd round = isOdd . round
-```
+### Explanation
 
-I have found that to focus on these common parts of the abstraction and type signatures,
-although they are the essential and very powerful concept in Haskell language,
-are obstacles in the way toward understanding. Since type signatures are lack of context of how, why and when to use
-these abstract structures, even reading through the whole symbol transformation in the signature and the actual examples,
-those *reasons* are still hidden in the text of article.
+The embedding Functors like `(->) r` is useful when the computation is not only about the argument transformation, but including to have some relation<sup>[2](#fn-io-embedded-effect)</sup> with the embedded type.
+For example, `State s a` means the transformation is not just to `a` but also on `s`, while `(->) r` here means to always have the `r` as the input of the generated function.
 
-Therefore, I decide to add some more diagrams and explanations not so official for the concepts and examples,
-since it is easier to use diagram to describe like variable or type in different step of tracing the signature and code.
+
 
 ---
+<br />
+
+<a name="fn-type-operator-built-in-syntax">1</a>: In real Haskell code, one cannot define a Functor using operator like `data (<>) a = (<>) a` without the [TypeOperators extension][1].
+
+<a name="fn-io-embedded-effect">2</a>: Not a real principle; Like `IO a` has no such embedded type in the definition, but in fact it is just like `State RealWorld a`. I don't have answer for this now, but people always said `IO` is considered as a mistake for Haskell and invented Eff Monad (Functor) after that 
+
+---
+
+[1]: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#type-operators

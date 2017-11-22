@@ -25,7 +25,7 @@ I may misunderstand some concepts of Haskell, or some extra information are actu
 
 Functors divided by different **"roles"** for different usages:
 
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vQV4UudBo7IxzZhjdKz58Ik25VM70MkdJ_OYcNiZgsgdtHLX8F7Gr28J56LbC3UZDpYTvo1OuucGACs/pub?w=842&amp;h=659">
+<img style="border: 2px solid #bbb" src="https://docs.google.com/drawings/d/e/2PACX-1vQV4UudBo7IxzZhjdKz58Ik25VM70MkdJ_OYcNiZgsgdtHLX8F7Gr28J56LbC3UZDpYTvo1OuucGACs/pub?w=842&amp;h=659">
 
 **In brief**:
 
@@ -127,7 +127,7 @@ even without the help from Monad
 ---
 <br />
 
-<a name="fn-unsafe">1</a>: no guarantee for safety, correctness and not outdated
+<a name="fn-unsafe">1</a>: No guarantee for safety, correctness and not outdated
 
 <a name="fn-stackoverflow-ref-1">2</a>: [https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor](https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor)
 
