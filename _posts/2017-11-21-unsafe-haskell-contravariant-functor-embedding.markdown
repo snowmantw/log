@@ -1,43 +1,38 @@
 ---
 layout: post
-title: "unsafeMemo: Contravariant Functor #1 - Functor"
+title: "unsafeMemo: Contravariant Functor #2 - Embedding Functor"
 date: 2017-11-18 11:47:00 +0900
 categories: Haskell unsafeMemo
 ---
 
-## Preface
+## "Embedding" Functor: (->) r
 
-Since I'm not an expert, sometimes to read Haskell articles and then turn those abstract ideas to mine is difficult.
-This is even worse for me not a English or Mathematic native, so I decide to draw diagrams and adding "unsafe"<sup>[1](#fn-unsafe)</sup> explanation to those
-ideas and diagrams. Apparently, I can only guarantee these explanations work for me, and maybe they are not 100% map back to the correct idea in Haskell or
-math. However, I hope these diagrams eventually helps anyone like me, or there would be some patches after I post the articles.
-
-## About this article
-
-Recently I re-read some articles about Contravariant Functor. For people who try hard to get the idea of such abstract structure, fortunately there are
-StackOverflow<sup>[2](#fn-stackoverflow-ref-1)</sup> and searching results give detailed references with
-actual examples in code. However, I have the same feeling to them when I was reading articles about Functors: there should be some diagrams and extra
-explanation for the type and value transformation, so that when a programmer is tracing type signatures and examples, the relations by steps may be
-depicted more clearly, at least more clearly to me<sup>[4](#fn-sidenote)</sup> . Therefore, I made some diagrams and write text for them. As I said, these are **"unsafe"** memo,
-I may misunderstand some concepts of Haskell, or some extra information are actually redundant, so there is no guarantee for the gain after reading.
-
-## Functors by usage
-
-Functors divided by different **"roles"** for different usages:
-
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vQV4UudBo7IxzZhjdKz58Ik25VM70MkdJ_OYcNiZgsgdtHLX8F7Gr28J56LbC3UZDpYTvo1OuucGACs/pub?w=842&amp;h=659">
+<img src="https://docs.google.com/drawings/d/e/2PACX-1vSL5gFJq4Flm11a2ejcnSOOUxNJ3Rsa0XavkhD4xnMuQX8FbCePl7TT33Pei9wksqSM7yHSukE3wTlX/pub?w=960&amp;h=720">
 
 **In brief**:
 
-1. Functor definition is to have a type variable `a` and a `fmap` to apply a customised function to the value of `a`.
-There is a diagram in [Appendix](#appendix) for `fmap` if it looks an unfamiliar concept. 
-2. Some Functors are designed as a "container", like `[]` and `Maybe`. The `fmap` will apply the function to the value inside the container Functor
-3. For Functors like `IO`, it is more like for applying transformation inside one specific context for isolation and specific purpose,
-since there is no "container" anymore
-4. The **"embedding"** Functors means they will have a embedded type variable that is not directly fed as a value to the applying function in `fmap`,
-but the whole `fmap` is designed to have interaction with the embedded one
+1. Different from Functor has only one type variable, an "embedding" function has two or more. For usual cases in turtorial, `(->) r` is a very common example. Similar to `Maybe a` or `IO a`,
+the Functor has an "argument" `a` that can be transformed when `fmap` it, but there is an implicit parameter `r` not direcrtly accessible via the function to apply by `fmap`
+
+2. Assume that we treat `(->) Event a` as a Functor, just like `Maybe a`, but this time we can embed a fixed type variable `Event` in the Functor as one parameter. And how this parameter changes
+during the computation is defined by the `fmap` of the Functor. Functor user apply an `(a->b)` cannot know and effect the parameter directly.
+
+3. Although `(->)` looks like a special symbol that used so common in type signature, it is still an ordinary symbol that we can image to use in define a Functor<sup>[1](#fn-type-operator-built-in-syntax)</sup>, just like `Maybe` or `[]`.
+The tricky part is we can "curry" a fixed type parameter when define and instantiate the Functor, like in this example the `r` in type class definition is instantiated to `Event`. So in the following example, to image it as `(-> Event) a`
+should be easier to not get confused by the plain `(->) Event a`, or `(->) r a` that looks like there are two variables will be transformed for the user.
+
+4. Since how to interact with the embedded parameter `Event` in this example is defined by the `fmap`, what the user can control is how to transform the argument of `(-> Event)` Functor. For example, if there is a Functor in type of
+`(-> Event) Bool`, via applying a `(Bool->String)`, we should get a `(-> Event) String`, just like from `Maybe Bool` to `Maybe String` via applying the same function. 
+
+5. For the pratical usage, we can get a "function generator" that user only needs to provide a "converter" for the output, and the input will always fixed to `Event`, while these generated functions may be used in a specific usage like as
+event stream handlers, and user don't need to take care about how to make the stream, or how to get the event. What user needs to do is to convert the possible output of the handler to a desired type.
 
 ### Explanation
+
+The first thing is why we need embedding Functors like `(->) r`, and when we use them in pratical code.
+
+3. Maybe the most confused part of this Functor is `(->)`: at the beginning of learning Haskell, although it is mentioned that infixed operators are just ordinary prefix operator with syntax sugar,
+the symbol infix `(->)` is so basic and common in type signature, to put it just as a name of Functor like `Maybe` or `[]` is difficult to image, not to mention 
 
 The typeclass of Functor tagged as 1. in the diagram is:
 
@@ -129,9 +124,9 @@ even without the help from Monad
 
 <a name="fn-unsafe">1</a>: no guarantee for safety, correctness and not outdated
 
-<a name="fn-stackoverflow-ref-1">2</a>: [https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor](https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor)
+<a name="fn-stackoverflow-ref-1">2</a>: [https://stackoverflow.com/questions/38034077/what-is-a-contravariant-functor]()
 
-<a name="fn-functor-datatype">3</a>: [https://hackage.haskell.org/package/base-4.8.1.0/docs/src/GHC.Base.html#line-625](https://hackage.haskell.org/package/base-4.8.1.0/docs/src/GHC.Base.html#line-625)
+<a name="fn-functor-datatype">3</a>: [https://hackage.haskell.org/package/base-4.8.1.0/docs/src/GHC.Base.html#line-625]()
 
 <a name="fn-sidenote">4</a>:
 **(Side note about diagrams and "unsafe" explanations)**
