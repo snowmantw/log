@@ -5,25 +5,10 @@ date: 2017-11-18 11:47:00 +0900
 categories: Haskell unsafeMemo
 ---
 
-Different from Functor has only one type variable, an "embedding" Functor has two or more. Like the `s` in `State s a` means to manipulate a state during computation, or `r` in `(->) r a` for generating
-functions that have the same input.
+Different from Functor has only one type variable, an "embedding" Functor has two or more. Like the `r` in `(->) r a` for generating
+functions that have the same input, or `s` in `State s a` means to manipulate a state during computation.
 
-## Functor (State s)
-
-<img style="border: 2px solid #bbb" src="https://docs.google.com/drawings/d/e/2PACX-1vSsiSa4A9yOu0XpnORj6zMtpuxRyZGQeAG9jnxsD3-qikKutT62Uvr_hpH1Yx0neU0_tuH8MvJH-pM-/pub?w=960&amp;h=720">
-
-**In brief**:
-
-1. For this definition it is easy to image that it provide user to interact with the state and the output in previous step. One thing to note is that although it seems the same with the `(->) r` Functor,
-the real definition is actually `newtype State s a = State { runState :: s -> (s, a) }`. That means, the actual instance will be: `State (s -> (a, s))`. Compare to `Maybe a` or `(-> r) a`,
-this is not easy to get the idea at the first look. The key is, user provides a state transformer to generate another state `s` and transformed result `a`.
-
-2. A common example for tutorials is `State RandGen Int` that to generate a new `Int` from a random number generator. For each time it generates a random number, the generator need to be updated to prevent generating the same
-number. Therefore, here we put the `RandGen` as the implicit `s` in State Functor after every transformation step.
-
-
----
-<br />
+(And `State s a` is actually very interesting if we revise it strictly within the scope of a Functor, not Monad)
 
 ## Functor (-> r)
 
@@ -48,7 +33,7 @@ could prevent getting confused like the original `(->) r a` form that looks like
 event stream handlers, and user don't need to take care about how to make the stream, or how to get the event. What user needs to do is to transform the possible output of the handler to a desired type.
 
 
-### Explanation
+### In Detail
 
 The embedding Functors like `(->) r` is useful when the computation is not only about the argument transformation, but including to have some relation<sup>[2](#fn-io-embedded-effect)</sup> with the embedded type.
 For example, `State s a` means the transformation is not just to `a` but also on `s`, while `(->) r` here means to always have the `r` as the input of the generated function.
@@ -60,8 +45,9 @@ For example, `State s a` means the transformation is not just to `a` but also on
 
 <a name="fn-type-operator-built-in-syntax">1</a>: In real Haskell code, one cannot define a Functor using operator like `data (<>) a = (<>) a` without the [TypeOperators extension][1].
 
-<a name="fn-io-embedded-effect">2</a>: Not a real principle; Like `IO a` has no such embedded type in the definition, but in fact it is just like `State RealWorld a`. I don't have answer for this now, but people always said `IO` is considered as a mistake for Haskell and invented Eff Monad (Functor) after that 
+<a name="fn-io-embedded-effect">2</a>: For Functors like `IO`, although the reason is unknown, the affected `ReadWorld` is hidden from the user rather than appearing like `IO RealWorld a`. 
 
 ---
 
 [1]: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#type-operators
+[2]: https://stackoverflow.com/questions/24103108/where-is-the-data-constructor-for-state

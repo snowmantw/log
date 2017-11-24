@@ -182,7 +182,7 @@ And after explanations similar to the simple ones like `Maybe a`, the example ac
 -- and of course how `State s` is supposed to work with that
 --
 let useRand = State random
-fmap useRand (State RandGen) -- State RandGen' (random Int like 123)
+fmap useRand (State RandGen) -- State RandGen (Int; generated from the generator)
 ```
 
 Or for `(->) a b`:
